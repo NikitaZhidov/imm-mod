@@ -5,13 +5,23 @@ import matplotlib.pyplot as plt
 
 # Распределение энергии
 
-normFactor = 1000;
+tissue = [
+  { 'ua': 32, 'us': 165, 'g': 0.72, 'd': 0.01 },
+  { 'ua': 40, 'us': 246, 'g': 0.72, 'd': 0.02 },
+  { 'ua': 23, 'us': 227, 'g': 0.72, 'd': 0.02 },
+  { 'ua': 46, 'us': 253, 'g': 0.72, 'd': 0.06 },
+  { 'ua': 23, 'us': 227, 'g': 0.72, 'd': 0.09 },
+]
 
+maxD = sum(map(lambda x: x['d'], tissue))
+
+# Данные для удобного счета графика тепловой карты
+normFactor = 1000;
 xDelta = 0.05 * normFactor;
 minX = int(-xDelta)
 maxX = int(xDelta)
 minZ = 0
-maxZ = int(0.1 * normFactor)
+maxZ = int(maxD * 1.1 * normFactor)
 segmentDelta = int(0.001 * normFactor)
 
 # Создаем словарь для хранения поглощенной энергии в каждом сегменте
@@ -22,28 +32,10 @@ for x in np.arange(minX, maxX + segmentDelta, segmentDelta):
     for z in np.arange(minZ, maxZ + segmentDelta, segmentDelta):
         segment_energy[(x, z)] = 0.0
 
-n_photons = 5000
+n_photons = 150
 n_steps = 15
 
 wave_length = 337 / (10**6)
-
-tissue = [
-  { 'ua': 32, 'us': 165, 'g': 0.72, 'd': 0.01 },
-  { 'ua': 40, 'us': 246, 'g': 0.72, 'd': 0.02 },
-  { 'ua': 23, 'us': 227, 'g': 0.72, 'd': 0.02 },
-  { 'ua': 46, 'us': 253, 'g': 0.72, 'd': 0.06 },
-  { 'ua': 23, 'us': 227, 'g': 0.72, 'd': 0.09 },
-  # { 'ua': 51, 'us': 186, 'g': 0.8, 'd': 100000000 },
-]
-
-maxD = sum(map(lambda x: x['d'], tissue))
-
-tissue_segments = [
-    [1, 2, 3, 4, 5],
-    [1, 2, 3, 4, 5],
-    [1, 2, 3, 4, 5],
-    [1, 2, 3, 4, 5],
-]
 
 def isReflected(z):
     return z < 0
@@ -211,7 +203,7 @@ print(f"reflected {round(reflected / n_photons * 100, 2)}%")
 x_coords = np.arange(minX, maxX, segmentDelta)  # Ваш диапазон координат x
 z_coords = np.arange(minZ, maxZ, segmentDelta)  # Ваш диапазон координат z
 
-energy_values = np.zeros((len(x_coords), len(z_coords)))  # Создаем массив для значений энергии
+energy_values = np.zeros((len(z_coords), len(x_coords)))  # Создаем массив для значений энергии
 
 for x in range(minX, maxX, segmentDelta):
     for z in range(minZ, maxZ, segmentDelta):
