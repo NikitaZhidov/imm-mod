@@ -22,8 +22,10 @@ for x in np.arange(minX, maxX + segmentDelta, segmentDelta):
     for z in np.arange(minZ, maxZ + segmentDelta, segmentDelta):
         segment_energy[(x, z)] = 0.0
 
-n_photons = 1000
+n_photons = 5000
 n_steps = 15
+
+wave_length = 337 / (10**6)
 
 tissue = [
   { 'ua': 32, 'us': 165, 'g': 0.72, 'd': 0.01 },
@@ -31,8 +33,10 @@ tissue = [
   { 'ua': 23, 'us': 227, 'g': 0.72, 'd': 0.02 },
   { 'ua': 46, 'us': 253, 'g': 0.72, 'd': 0.06 },
   { 'ua': 23, 'us': 227, 'g': 0.72, 'd': 0.09 },
-  { 'ua': 51, 'us': 186, 'g': 0.8, 'd': 100000000 },
+  # { 'ua': 51, 'us': 186, 'g': 0.8, 'd': 100000000 },
 ]
+
+maxD = sum(map(lambda x: x['d'], tissue))
 
 tissue_segments = [
     [1, 2, 3, 4, 5],
@@ -56,9 +60,10 @@ def isPassed(z):
 
 def photon_location(z):
     global tissue
-    # Если z меньше 0, возвращаем последний слой
+    # z КООРДИНАТА < 0 или > maxD должна обрабатываться ОТДЕЛЬНО
+    # данный if и tissue[-1] это заглушки!
     if z < 0:
-        return tissue[-1]
+        return tissue[0]
 
     # Иначе, ищем слой, в котором находится точка с координатой z
     layerZ = 0
@@ -67,7 +72,6 @@ def photon_location(z):
         if z < layerZ:
             return layer
 
-    # Если z больше всех заданных толщин, то возвращаем последний слой
     return tissue[-1]
 
 def generate_theta(g):
@@ -109,7 +113,9 @@ def calculateNewV(theta, phi, vect):
 
 # ua + us
 def generate_s(u):
-    return np.random.exponential(scale=1/u)
+    wave_cm = np.random.exponential(scale=u);
+
+    return wave_cm * wave_length
 
 def getNewCoords(coords, vector, layer):
   s = generate_s(layer['ua'] + layer['us'])
@@ -123,8 +129,8 @@ def getNewCoords(coords, vector, layer):
   return (x, y, z)
 
 
-W_border = 0.02
-m = 5
+W_border = 0.2
+m = 10
 
 alivePhotons = 0;
 reflected = 0;
@@ -132,6 +138,10 @@ passed = 0;
 
 for phot in range(n_photons):
   coords = (0, 0, 0)
+
+#   theta = generate_theta(tissue[0]['g'])
+#   phi = np.random.uniform(0, 2 * math.pi)
+#   vector = calculateNewV(theta, phi, (0, 0, 1))
   vector = (0, 0, 1)
 
   W = 1
@@ -143,8 +153,9 @@ for phot in range(n_photons):
     xCoord = coords[0]
     zCoord = coords[2]
 
-    # if zCoord < 0:
-    #     break
+      # Uncomment in case once reflected photons are not moving anymore
+    if zCoord < 0 or zCoord > maxD:
+        break
 
     layer = photon_location(zCoord)
 
